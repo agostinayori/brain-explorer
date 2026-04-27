@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brain Explorer — Interactive Neural Atlas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f8f7f4;
+      --white: #ffffff;
+      --text-1: #1a1a2e;
+      --text-2: #5c5c7a;
+      --text-3: #9999b0;
+      --border: #e4e4ef;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--text-1);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* subtle dot-grid background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: radial-gradient(circle, rgba(26,26,46,0.055) 1px, transparent 0);
+      background-size: 30px 30px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── App shell ─────────────────────────────────────────────────────── */
+    #app {
+      position: relative;
+      width: 100vw; height: 100vh;
+      transition: transform .44s cubic-bezier(.4,0,.2,1);
+    }
+    #app.no-transition { transition: none; }
+
+    /* vignette edges so the brain floats */
+    #app::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(248,247,244,.65) 100%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #app canvas { display: block; }
+
+    /* ── Loading ───────────────────────────────────────────────────────── */
+    #loading {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 300;
+      transition: opacity .7s ease;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+
+    .loading-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 21px; font-weight: 700;
+      color: var(--text-1); letter-spacing: -0.2px;
+    }
+    .loading-sub {
+      font-size: 11px; letter-spacing: 2.2px;
+      text-transform: uppercase; color: var(--text-3);
+      margin-top: 6px;
+    }
+    .loading-bar {
+      width: 120px; height: 2px;
+      background: var(--border); border-radius: 2px;
+      margin-top: 22px; overflow: hidden;
+    }
+    .loading-fill {
+      height: 100%; background: var(--text-1);
+      border-radius: 2px;
+      animation: loadFill 1.8s cubic-bezier(.4,0,.2,1) forwards;
+    }
+    @keyframes loadFill { from { width:0 } to { width:100% } }
+
+    /* ── Header ───────────────────────────────────────────────────────── */
+    .header {
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 28px 40px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      z-index: 10; pointer-events: none;
+    }
+
+    .app-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px; font-weight: 700;
+      color: var(--text-1); letter-spacing: -0.3px; line-height: 1.2;
+    }
+    .app-sub {
+      font-size: 11px; font-weight: 400;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-3); margin-top: 5px;
+    }
+    .region-counter { text-align: right; }
+    .region-counter strong {
+      display: block; font-size: 28px; font-weight: 300;
+      color: var(--text-1); line-height: 1; margin-bottom: 2px;
+    }
+    .region-counter span { font-size: 11px; color: var(--text-3); letter-spacing: 1px; text-transform: uppercase; }
+
+    /* ── Hint pill ────────────────────────────────────────────────────── */
+    .hint {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,.88);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 10px 22px;
+      font-size: 12px; color: var(--text-2); letter-spacing: 0.3px;
+      z-index: 10; pointer-events: none;
+      white-space: nowrap;
+      transition: opacity .8s ease;
+    }
+    .hint.hidden { opacity: 0; }
+    .hint-sep { margin: 0 8px; opacity: .35; }
+
+    /* ── Tooltip ──────────────────────────────────────────────────────── */
+    #tooltip {
+      position: fixed;
+      background: rgba(26,26,46,.86);
+      color: #fff;
+      border-radius: 8px;
+      padding: 7px 13px;
+      font-size: 12.5px; font-weight: 500; letter-spacing: 0.15px;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity .15s ease;
+      transform: translate(14px, -50%);
+      white-space: nowrap;
+    }
+
+    /* ── 3-D labels (CSS2DObject) ──────────────────────────────────────── */
+    .brain-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px; font-weight: 500; letter-spacing: 0.25px;
+      color: var(--text-1);
+      background: rgba(248,247,244,.92);
+      backdrop-filter: blur(6px);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(26,26,46,.1);
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 2px 10px rgba(26,26,46,.07);
+      transition: background .2s, border-color .2s, box-shadow .2s;
+    }
+    .brain-label.active {
+      background: rgba(255,255,255,.97);
+      border-color: rgba(26,26,46,.2);
+      box-shadow: 0 3px 16px rgba(26,26,46,.12);
+      font-weight: 600;
+    }
+
+    /* ── Side Panel ───────────────────────────────────────────────────── */
+    .side-panel {
+      position: fixed; right: 0; top: 0;
+      width: 464px; height: 100vh;
+      background: var(--white);
+      box-shadow: -2px 0 60px rgba(26,26,46,.11);
+      transform: translateX(100%);
+      transition: transform .44s cubic-bezier(.4,0,.2,1);
+      z-index: 50;
+      display: flex; flex-direction: column;
+    }
+    .side-panel.open { transform: translateX(0); }
+
+    /* ── Drag-to-resize handle ─────────────────────────────────────────── */
+    .resize-handle {
+      position: absolute;
+      left: 0; top: 0;
+      width: 14px; height: 100%;
+      cursor: col-resize;
+      z-index: 2;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .18s;
+    }
+    .resize-handle:hover,
+    .resize-handle.active { background: rgba(26,26,46,.04); }
+
+    /* 3-dot grip indicator via box-shadow */
+    .resize-handle::after {
+      content: '';
+      display: block;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--border);
+      box-shadow: 0 -8px 0 var(--border), 0 8px 0 var(--border);
+      transition: background .15s, box-shadow .15s;
+      pointer-events: none;
+    }
+    .resize-handle:hover::after,
+    .resize-handle.active::after {
+      background: var(--text-3);
+      box-shadow: 0 -8px 0 var(--text-3), 0 8px 0 var(--text-3);
+    }
+
+    .panel-inner {
+      flex: 1; overflow-y: auto;
+      padding: 44px 38px 52px 26px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .panel-inner::-webkit-scrollbar { width: 4px; }
+    .panel-inner::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .close-btn {
+      position: absolute; top: 18px; right: 18px;
+      width: 32px; height: 32px;
+      border: none; background: var(--bg); border-radius: 8px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--text-2); transition: background .15s;
+      z-index: 1;
+    }
+    .close-btn:hover { background: var(--border); }
+
+    /* Panel content pieces */
+    .p-badge {
+      display: flex; align-items: center; gap: 9px;
+      margin-bottom: 14px;
+    }
+    .p-dot {
+      width: 11px; height: 11px;
+      border-radius: 50%; flex-shrink: 0;
+    }
+    .p-category {
+      font-size: 10.5px; font-weight: 600;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-3);
+    }
+
+    .p-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 30px; font-weight: 700;
+      color: var(--text-1); line-height: 1.15;
+      margin-bottom: 20px;
+    }
+
+    .p-accent {
+      height: 3px; width: 36px;
+      border-radius: 3px;
+      margin-bottom: 34px;
+    }
+
+    .p-section { margin-bottom: 30px; }
+
+    .p-section-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 2.2px; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 13px;
+    }
+
+    .p-list {
+      list-style: none;
+      display: flex; flex-direction: column; gap: 9px;
+    }
+    .p-list li {
+      font-size: 13.5px; color: var(--text-2);
+      padding-left: 15px; position: relative; line-height: 1.55;
+    }
+    .p-list li::before {
+      content: '';
+      position: absolute; left: 0; top: 8px;
+      width: 5px; height: 5px;
+      border-radius: 50%; background: currentColor; opacity: .38;
+    }
+
+    .p-tags {
+      display: flex; flex-wrap: wrap; gap: 7px;
+    }
+    .p-tag {
+      display: inline-flex; align-items: center;
+      padding: 5px 12px;
+      border-radius: 100px;
+      font-size: 12px; font-weight: 500;
+      background: var(--bg); color: var(--text-2);
+      border: 1px solid var(--border);
+    }
+
+    .p-behaviors {
+      list-style: none;
+      display: flex; flex-direction: column; gap: 9px;
+    }
+    .p-behaviors li {
+      font-size: 13px; color: var(--text-2);
+      background: var(--bg); border-radius: 10px;
+      padding: 12px 14px; line-height: 1.5;
+    }
+
+    /* ── Rich content types ────────────────────────────────────────────── */
+    .p-paragraphs { display: flex; flex-direction: column; gap: 13px; }
+    .p-para {
+      font-size: 13.5px; line-height: 1.74;
+      color: var(--text-2); margin: 0;
+    }
+
+    .p-named-bullets {
+      list-style: none;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .p-named-bullets li {
+      font-size: 13.5px; color: var(--text-2);
+      line-height: 1.62; padding-left: 18px; position: relative;
+    }
+    .p-named-bullets li::before {
+      content: '—';
+      position: absolute; left: 0;
+      color: var(--text-3); font-weight: 300;
+    }
+    .p-nb-name {
+      font-weight: 600;
+      color: var(--text-1);
+    }
+
+    /* Reuse .p-list for plain bullet type in richSections */
+    .p-section .p-list li { font-size: 13.5px; line-height: 1.65; }
+
+    .p-chips {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .p-chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 5px 13px 5px 9px;
+      border-radius: 100px;
+      font-size: 12px; font-weight: 500;
+      background: var(--white); color: var(--text-2);
+      border: 1px solid var(--border);
+      cursor: pointer; transition: all .15s;
+    }
+    .p-chip:hover {
+      background: var(--bg); border-color: var(--text-3);
+      transform: translateY(-1px);
+    }
+    .p-chip-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%; flex-shrink: 0;
+    }
+
+    /* ── Panel fade-in ─────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(14px) }
+      to   { opacity:1; transform:translateY(0) }
+    }
+    .p-section { animation: fadeUp .35s ease both; }
+    .p-title   { animation: fadeUp .28s ease both; }
+    .p-badge   { animation: fadeUp .22s ease both; }
+    .p-accent  { animation: fadeUp .32s ease both; }
+  </style>
+</head>
+<body>
+
+  <!-- Loading screen -->
+  <div id="loading">
+    <div class="loading-title">Brain Explorer</div>
+    <div class="loading-sub">Interactive Neural Atlas</div>
+    <div class="loading-bar"><div class="loading-fill"></div></div>
+  </div>
+
+  <!-- Three.js canvas mount -->
+  <div id="app"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div>
+      <div class="app-title">Brain Explorer</div>
+      <div class="app-sub">Interactive Neural Atlas</div>
+    </div>
+    <div class="region-counter">
+      <strong>7</strong>
+      <span>Regions Mapped</span>
+    </div>
+  </header>
+
+  <!-- Hint pill -->
+  <div class="hint" id="hint">
+    Drag to rotate
+    <span class="hint-sep">·</span>
+    Scroll to zoom
+    <span class="hint-sep">·</span>
+    Click a region to explore
+  </div>
+
+  <!-- Tooltip -->
+  <div id="tooltip"></div>
+
+  <!-- Side panel -->
+  <aside class="side-panel" id="panel">
+    <!-- Drag-to-resize strip on the left edge -->
+    <div class="resize-handle" id="resize-handle" title="Drag to resize"></div>
+    <button class="close-btn" id="close-btn" aria-label="Close">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+        <path d="M1 1L12 12M12 1L1 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="panel-inner" id="panel-body"></div>
+  </aside>
+
+  <!-- ── Import map ── -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <!-- ── App ── -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls }    from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    /* ═══════════════════════════════════════════════════════════════════
+       DATA
+    ═══════════════════════════════════════════════════════════════════ */
+    const REGIONS = [
+      {
+        id: 'frontal',
+        name: 'Frontal Cortex',
+        category: 'Frontal Lobe',
+        color: '#a8d5a2',
+        emissiveHex: 0x2e7d48,
+        position: [0, 0.68, 1.26],
+        scale:    [2.40, 1.68, 1.40],
+        radius: 0.65,
+        labelOffset: [0, 1.52, 0.20],
+        connections: ['amygdala','hippocampus','nucleus_accumbens','hypothalamus'],
+        richSections: [
+          {
+            label: 'Core Functions',
+            type: 'paragraphs',
+            items: [
+              `The frontal cortex is the most recently evolved region of the brain — and in many ways, the most distinctly human. Located right behind your forehead, it's responsible for what neuroscientists call "executive function": thinking before acting, weighing consequences, considering other people's perspectives, and generally keeping you from doing things you'll regret. If the amygdala is the brain's alarm system, the frontal cortex is the part that decides whether the alarm is actually warranted.`,
+              `One of its less obvious but crucial jobs is suppressing irrelevant information. Focusing on a task isn't just about directing attention toward something — it's about actively blocking out everything else. The frontal cortex does a lot of that filtering work, which is part of why sustained concentration is genuinely effortful.`,
+              `This effort has a cost. Make the frontal cortex work hard on one task, and performance on a subsequent frontally-dependent task declines — even if the second task is completely different. The resource isn't infinite. This is also why multitasking is largely a myth: what feels like doing two things at once is mostly the frontal cortex switching rapidly between them, paying a small cognitive penalty each time.`
+            ]
+          },
+          {
+            label: 'Subregions',
+            type: 'paragraphs',
+            items: [
+              `The frontal cortex isn't one uniform structure. Its most recently evolved portion — the prefrontal cortex — is what really sets humans apart from other primates, and it has distinct subregions that do meaningfully different things.`,
+              `The dorsolateral PFC (dlPFC) is the "do the harder thing" region. It handles working memory, planning, and the ability to delay gratification in favor of longer-term goals. When you override an impulse, resist a temptation, or stick to a plan despite a more attractive short-term option, the dlPFC is heavily involved.`,
+              `The ventromedial PFC (vmPFC) operates differently. Where the dlPFC is cold and computational, the vmPFC integrates emotional and social information into decision-making. It's less about abstract planning and more about gut-informed judgment — the part that knows something feels wrong even when you can't fully articulate why. Damage to the vmPFC doesn't make people more rational; it makes them make terrible decisions with complete logical coherence and zero wisdom.`,
+              `The orbitofrontal cortex (OFC) sits at the intersection of emotion, reward, and social behavior. It's particularly important for adjusting behavior based on changing rules and outcomes — flexibility rather than rigid execution of a plan.`,
+              `A useful shorthand: the dlPFC is about what you should do; the vmPFC is about how that actually feels; and the OFC is about updating when the situation changes.`
+            ]
+          },
+          {
+            label: 'Social Complexity',
+            type: 'paragraphs',
+            items: [
+              `One of the more fascinating findings in comparative neuroscience is that frontal cortex size across primate species correlates with social complexity — specifically, the size and intricacy of the social groups they live in. The demands of navigating shifting alliances, tracking who's trustworthy, managing status and reputation, and modeling what others are thinking apparently drove the expansion of this region over evolutionary time. The frontal cortex, in a real sense, is a social organ.`,
+              `Theory of mind — the ability to model what other people are thinking and feeling — depends heavily on frontal cortex function. So does empathy that goes beyond automatic emotional contagion, moral reasoning, and the partial ability to override in-group/out-group biases.`
+            ]
+          },
+          {
+            label: 'Cognition vs Emotion',
+            type: 'paragraphs',
+            items: [
+              `There's a long tradition of treating reason and emotion as opposites. The frontal cortex versus the limbic system. Logic up here, feelings down there. This framing is mostly wrong. The frontal cortex doesn't suppress emotion to produce good decisions — it integrates emotional information into them. The vmPFC is the clearest example: it uses emotional signals as data, and without them, decision-making breaks down.`
+            ]
+          },
+          {
+            label: 'Relationship with the Limbic System',
+            type: 'paragraphs',
+            items: [
+              `The frontal cortex and the limbic system — particularly the amygdala — are in constant dialogue. Under normal conditions, the frontal cortex sends inhibitory signals downward, contextualizing emotional reactions and keeping them proportionate. This is the biological basis of self-control.`,
+              `The frontal cortex also mediates fear extinction. When you've learned to fear something and that fear is no longer warranted, it's not that the original fear memory gets erased — it doesn't. What happens instead is that the frontal cortex learns to actively suppress the fear response. This is why exposure therapy works: it's not deleting the old association, it's building a new stronger one that overrides it. And it's why stress can make previously extinguished fears return — when the frontal cortex is compromised, old responses resurface.`
+            ]
+          },
+          {
+            label: 'Vulnerabilities',
+            type: 'paragraphs',
+            items: [
+              `The frontal cortex has one major design flaw: it's extremely sensitive to stress. Under acute stress, glucocorticoids and norepinephrine flood the region, synaptic connections weaken, and deliberative thinking gets pushed aside in favor of faster, more automatic responses. Adaptive in a genuine emergency. A problem when the emergency is a difficult conversation or a looming deadline.`,
+              `It's also the last brain region to fully develop — it doesn't reach maturity until the mid-twenties. Adolescents aren't bad at assessing risk because they don't understand it — in calm settings they can articulate it perfectly. They're bad at it in the moment because the system that should be integrating that knowledge into real-time decisions isn't fully online yet.`
+            ]
+          },
+          {
+            label: 'Neurotransmitters & Hormones',
+            type: 'named-bullets',
+            items: [
+              { name: 'Dopamine', desc: `critical for frontal cortex function — the right level sharpens focus and working memory, too much or too little impairs it. Stress disrupts dopamine signaling here significantly` },
+              { name: 'Serotonin', desc: `modulates mood and impulse control` },
+              { name: 'Norepinephrine', desc: `in moderate amounts enhances function; under high stress, contributes to its impairment` },
+              { name: 'Glucocorticoids (cortisol)', desc: `acute exposure can temporarily sharpen performance; chronic exposure causes literal structural damage — dendritic retraction in frontal cortex neurons over time` },
+              { name: 'GABA', desc: `provides inhibitory tone that keeps activity regulated` }
+            ]
+          },
+          {
+            label: 'Real-Life Behaviors',
+            type: 'bullets',
+            items: [
+              `That moment when someone says something infuriating and you manage — barely — not to respond the way you want to. That's your frontal cortex applying the brakes on your amygdala's first instinct.`,
+              `Why it's so hard to make good decisions when exhausted, hungry, or under pressure: stress compromises frontal cortex function in measurable, documented ways. "I wasn't myself" is sometimes neurologically accurate.`,
+              `Sitting down to work after a draining meeting and finding it genuinely harder to concentrate — not laziness, but the depletion effect in action.`,
+              `The capacity to feel genuine remorse — to imagine how your actions affected someone else and feel bad about it — is a frontal cortex function. Its absence in certain conditions is part of what defines psychopathy at a neurological level.`
+            ]
+          },
+          {
+            label: 'Key Connections',
+            type: 'named-bullets',
+            items: [
+              { name: 'Amygdala', desc: `the frontal cortex's most important relationship. Under normal conditions it sends inhibitory signals downward, modulating emotional reactivity and mediating fear extinction. Under stress, this reverses — the amygdala starts driving behavior while the frontal cortex loses influence.` },
+              { name: 'Hippocampus', desc: `the frontal cortex draws on hippocampal memory to make context-sensitive decisions. Past experience informs present judgment.` },
+              { name: 'Nucleus Accumbens', desc: `the frontal cortex regulates the reward system, helping delay gratification and override immediate impulses. When this connection weakens, impulsivity increases.` },
+              { name: 'Hypothalamus', desc: `the frontal cortex can modulate the stress response downstream — one mechanism through which cognitive reappraisal can physically calm the body.` }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'amygdala',
+        name: 'Amygdala',
+        category: 'Limbic System',
+        color: '#e8b4b8',
+        emissiveHex: 0x9e2838,
+        bilateral: true,
+        positions: [[-0.97, 0.04, 0.26],[0.97, 0.04, 0.26]],
+        scale: [0.52, 0.44, 0.62],
+        radius: 0.60,
+        labelPosition: [-1.82, 0.56, 0.26],
+        connections: ['frontal','hippocampus','hypothalamus','nucleus_accumbens'],
+        richSections: [
+          {
+            label: 'Core Functions',
+            type: 'paragraphs',
+            items: [
+              `The amygdala is the brain's alarm system — a small, almond-shaped structure buried deep in the temporal lobe that's been keeping mammals alive for millions of years by answering one critical question: should I be scared right now? But it does a lot more than just fear. It's the region that decides what's emotionally significant, tags memories with emotional weight, and kicks off your body's threat response before your conscious mind has even registered what's happening. By the time you think "wait, was that a snake?", your amygdala already had you jumping backwards half a second ago.`,
+              `It receives sensory information through two distinct pathways. The first is fast and dirty — a direct route from the thalamus that bypasses the cortex entirely. It's imprecise, but it's fast, and in an emergency, speed beats accuracy. The second pathway runs through the cortex and delivers a richer, more nuanced picture of what's actually happening. Both signals arrive at the amygdala, which integrates them and decides whether to sound the alarm. The consequence of having that first pathway is that your body is already responding to a potential threat before your brain has finished processing whether it's real.`,
+              `It's also deeply involved in aggression — specifically the reactive, hot-blooded kind. Not calculated or premeditated, but the "how dare you" kind that flares up fast. The amygdala is particularly sensitive to signals of social threat: disrespect, humiliation, challenges to status. In studies with both humans and animals, amygdala activation correlates strongly with aggressive responses, especially when the perceived threat is social rather than physical.`
+            ]
+          },
+          {
+            label: 'Anxiety, Fear & Panic',
+            type: 'paragraphs',
+            items: [
+              `Fear and anxiety are related but distinct. Fear has an object — there's something specific triggering it. Anxiety is fear untethered from a clear cause: the amygdala firing in anticipation of something bad, even when nothing identifiable is wrong. Chronic anxiety is essentially a hyperreactive amygdala that has learned to expect threats that may not materialize.`,
+              `Panic attacks take this further. During a panic attack, the amygdala triggers a full-scale threat response — racing heart, shortness of breath, intense dread — in the absence of any real danger. What makes panic attacks particularly cruel is that the physical symptoms themselves become new inputs that the amygdala interprets as further evidence of danger, creating a feedback loop that can escalate rapidly.`,
+              `Chronic stress makes this worse in a concrete, structural way: sustained glucocorticoid exposure causes the amygdala to literally grow — more synaptic connections, higher baseline reactivity. The more stressed you are, the more reactive your amygdala becomes, which generates more stress.`
+            ]
+          },
+          {
+            label: 'Neurotransmitters & Hormones',
+            type: 'named-bullets',
+            items: [
+              { name: 'CRF (Corticotropin-Releasing Factor)', desc: `heavily concentrated in the amygdala, central to both fear and anxiety responses` },
+              { name: 'Norepinephrine', desc: `heightens alertness and emotional arousal` },
+              { name: 'Dopamine', desc: `involved in threat anticipation and aversive learning` },
+              { name: 'GABA', desc: `the main inhibitory brake; less GABA activity means more anxiety. Most anti-anxiety medications work by enhancing GABA signaling` },
+              { name: 'Glutamate', desc: `excitatory, amplifies the alarm signal` },
+              { name: 'Glucocorticoids (cortisol)', desc: `feed back into the amygdala and, with chronic exposure, increase its reactivity over time` }
+            ]
+          },
+          {
+            label: 'Real-Life Behaviors',
+            type: 'bullets',
+            items: [
+              `You're walking alone at night and hear footsteps behind you. Your heart rate spikes, your muscles tense, your breathing changes — all before you've consciously decided to be scared. That's the fast thalamic pathway, several hundred milliseconds ahead of your frontal cortex.`,
+              `Studies show the amygdala responds more strongly to faces of people from other racial groups — a deeply uncomfortable finding that speaks to how threat-detection got wired through evolution and cultural learning. It's not destiny, but it's real, and ignoring it doesn't make it go away.`,
+              `In patients with amygdala damage, something striking happens: they lose the ability to recognize fear in other people's faces. They can describe what fear is conceptually, but they can't read it in someone's expression.`,
+              `Intermittent, unpredictable stress produces stronger and more lasting amygdala sensitization than constant stress. Uncertainty is particularly hard on this system.`
+            ]
+          },
+          {
+            label: 'Key Connections',
+            type: 'named-bullets',
+            items: [
+              { name: 'Frontal Cortex', desc: `the PFC is the voice of reason that's supposed to regulate the amygdala — providing context, dampening overreactions, talking the alarm system down. Under high stress, this connection weakens and the dynamic reverses.` },
+              { name: 'Hippocampus', desc: `provides context — where and when you are — which helps calibrate the threat response. Same loud bang, completely different meaning depending on where you are.` },
+              { name: 'Hypothalamus', desc: `once the amygdala sounds the alarm, the hypothalamus executes the physical response — activating the stress hormone cascade, altering heart rate, redirecting blood flow to muscles.` }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'hippocampus',
+        name: 'Hippocampus',
+        category: 'Limbic System',
+        color: '#c4b0d8',
+        emissiveHex: 0x5c38a0,
+        bilateral: true,
+        positions: [[-1.18, -0.22, -0.16],[1.18, -0.22, -0.16]],
+        scale: [0.52, 0.40, 1.16],
+        radius: 0.60,
+        labelPosition: [-1.92, -0.22, -0.16],
+        connections: ['frontal','amygdala','hypothalamus'],
+        functions: [
+          'Forming new long-term declarative memories',
+          'Spatial navigation and cognitive mapping',
+          'Memory consolidation during sleep',
+          'Contextual and episodic learning',
+          'Linking memories to emotional context'
+        ],
+        neurotransmitters: ['Acetylcholine','Glutamate','GABA','Serotonin','BDNF'],
+        behaviors: [
+          'Remembering every detail of a meaningful trip',
+          'Navigating a new neighborhood after one visit',
+          'Waking with a clear memory of last night\'s dream',
+          'A scent instantly transporting you to a childhood memory'
+        ]
+      },
+      {
+        id: 'hypothalamus',
+        name: 'Hypothalamus',
+        category: 'Diencephalon',
+        color: '#f5c5a0',
+        emissiveHex: 0xb05a18,
+        position: [0, -0.12, 0.42],
+        scale: [0.55, 0.40, 0.55],
+        radius: 0.60,
+        labelOffset: [0.94, 0.32, 0],
+        connections: ['frontal','amygdala','hippocampus','nucleus_accumbens'],
+        functions: [
+          'Regulating hunger, thirst, and satiety',
+          'Maintaining core body temperature',
+          'Governing circadian rhythms and sleep cycles',
+          'Hormonal control via the pituitary gland',
+          'Autonomic nervous system regulation'
+        ],
+        neurotransmitters: ['CRH','TRH','GnRH','Oxytocin','Vasopressin','Dopamine'],
+        behaviors: [
+          'Sudden ravenous hunger after skipping lunch',
+          'Shivering when cold, sweating when hot',
+          'Naturally waking at the same time each morning',
+          'Intense thirst after eating something very salty'
+        ]
+      },
+      {
+        id: 'nucleus_accumbens',
+        name: 'Nucleus Accumbens',
+        category: 'Basal Ganglia',
+        color: '#96c8e0',
+        emissiveHex: 0x1a6890,
+        position: [0, 0.22, 0.88],
+        scale: [0.58, 0.44, 0.54],
+        radius: 0.60,
+        labelOffset: [0.94, 0.36, 0],
+        connections: ['frontal','amygdala','hypothalamus'],
+        functions: [
+          'Processing reward, pleasure, and euphoria',
+          'Driving motivation and goal-directed behavior',
+          'Addiction, craving, and reinforcement learning',
+          'Integrating emotion with action selection',
+          'Mediating the anticipation of reward'
+        ],
+        neurotransmitters: ['Dopamine','Serotonin','Endorphins','GABA','Glutamate'],
+        behaviors: [
+          'The rush of excitement when you receive great news',
+          'Craving comfort food or sugar when stressed',
+          'The compulsive pull of social media and notifications',
+          'Staying motivated when a reward feels close'
+        ]
+      },
+      {
+        id: 'cerebellum',
+        name: 'Cerebellum',
+        category: 'Hindbrain',
+        color: '#9fd8c8',
+        emissiveHex: 0x1e8060,
+        position: [0, -1.04, -1.60],
+        scale: [1.82, 0.90, 1.22],
+        radius: 0.65,
+        labelOffset: [0, -1.18, 0],
+        lobes: [
+          { pos: [-0.65, -0.66, -1.54], scl: [0.70, 0.56, 0.66] },
+          { pos: [ 0.65, -0.66, -1.54], scl: [0.70, 0.56, 0.66] },
+          { pos: [ 0.00, -0.64, -1.45], scl: [0.54, 0.52, 0.60] },
+        ],
+        connections: ['brainstem'],
+        functions: [
+          'Motor coordination and postural balance',
+          'Fine-tuning voluntary movement',
+          'Timing and rhythm in motor sequences',
+          'Storing procedural and skill-based memory',
+          'Predicting sensory consequences of motion'
+        ],
+        neurotransmitters: ['GABA','Glutamate','Norepinephrine','Serotonin','Acetylcholine'],
+        behaviors: [
+          'Riding a bicycle without thinking about balance',
+          'Typing fluently without watching the keyboard',
+          'Catching an object tossed unexpectedly your way',
+          'The deep muscle memory of playing a musical instrument'
+        ]
+      },
+      {
+        id: 'brainstem',
+        name: 'Brain Stem',
+        category: 'Central Nervous System',
+        color: '#d4c5a0',
+        emissiveHex: 0x7a5e1a,
+        position: [0, -1.76, -0.44],
+        isCapsule: true,
+        capsuleRadius: 0.30,
+        capsuleLength: 0.92,
+        scale: [1.0, 1.0, 1.0],
+        labelOffset: [0.80, 0, 0],
+        connections: ['cerebellum','hypothalamus'],
+        functions: [
+          'Regulating breathing and heart rate automatically',
+          'Controlling levels of arousal, alertness, and sleep',
+          'Relaying signals between brain and spinal cord',
+          'Governing swallowing, coughing, and vomiting reflexes',
+          'Maintaining blood pressure and cardiovascular reflexes'
+        ],
+        neurotransmitters: ['Acetylcholine','Norepinephrine','Serotonin','Dopamine','GABA'],
+        behaviors: [
+          'Continuing to breathe automatically during deep sleep',
+          'Heart rate surging in response to perceived danger',
+          'Waking up when your name is called across a quiet room',
+          'Coughing reflexively when something enters the airway'
+        ]
+      }
+    ];
+
+    const REGION_MAP = Object.fromEntries(REGIONS.map(r => [r.id, r]));
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SCENE
+    ═══════════════════════════════════════════════════════════════════ */
+    const app = document.getElementById('app');
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8f7f4);
+    scene.fog = new THREE.FogExp2(0xf8f7f4, 0.055);
+
+    const camera = new THREE.PerspectiveCamera(43, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(2.9, 1.9, 5.6);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    app.appendChild(renderer.domElement);
+
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(innerWidth, innerHeight);
+    Object.assign(labelRenderer.domElement.style, {
+      position: 'absolute', top: '0', left: '0', pointerEvents: 'none'
+    });
+    app.appendChild(labelRenderer.domElement);
+
+    /* ── Controls ── */
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.055;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.65;
+    controls.enablePan = false;
+    controls.minDistance = 3.5;
+    controls.maxDistance = 13;
+    controls.maxPolarAngle = Math.PI * 0.78;
+    controls.minPolarAngle = Math.PI * 0.08;
+    controls.target.set(0, -0.2, 0);
+
+    /* ── Lights ── */
+    scene.add(new THREE.AmbientLight(0xffffff, 0.58));
+
+    const key = new THREE.DirectionalLight(0xfff8f0, 1.35);
+    key.position.set(4, 7, 5); scene.add(key);
+
+    const fill = new THREE.DirectionalLight(0xeef2ff, 0.48);
+    fill.position.set(-5, 1, -3); scene.add(fill);
+
+    const rim = new THREE.DirectionalLight(0xfff4e8, 0.28);
+    rim.position.set(0, -4, -5); scene.add(rim);
+
+    /* ═══════════════════════════════════════════════════════════════════
+       BUILD BRAIN GEOMETRY
+    ═══════════════════════════════════════════════════════════════════ */
+    const brainGroup = new THREE.Group();
+    scene.add(brainGroup);
+
+    /* ── Outer cerebral hemisphere hulls (non-interactive silhouette) ── */
+    {
+      const hullGeo = new THREE.SphereGeometry(1.0, 52, 36);
+      const hullMat = () => new THREE.MeshPhongMaterial({
+        color: new THREE.Color(0xc5bdb0),
+        transparent: true, opacity: 0.10,
+        depthWrite: false,
+        shininess: 5,
+        specular: new THREE.Color(0xffffff).multiplyScalar(0.07),
+      });
+      // Left hemisphere
+      const lh = new THREE.Mesh(hullGeo, hullMat());
+      lh.position.set(-0.76, 0.26, 0.08);
+      lh.scale.set(1.32, 1.64, 2.14);
+      brainGroup.add(lh);
+      // Right hemisphere
+      const rh = new THREE.Mesh(hullGeo, hullMat());
+      rh.position.set( 0.76, 0.26, 0.08);
+      rh.scale.set(1.32, 1.64, 2.14);
+      brainGroup.add(rh);
+    }
+
+    const meshMap  = {};   // id → Mesh[]
+    const glowMap  = {};   // id → Mesh[]
+    const labelMap = {};   // id → CSS2DObject
+    const rayCandidates = [];
+
+    REGIONS.forEach(r => {
+      const baseColor = new THREE.Color(r.color);
+
+      const matFn = () => new THREE.MeshPhongMaterial({
+        color: baseColor.clone(),
+        emissive: new THREE.Color(r.emissiveHex),
+        emissiveIntensity: 0.07,
+        shininess: 22,
+        specular: new THREE.Color(0xffffff).multiplyScalar(0.14),
+      });
+
+      const glowMatFn = () => new THREE.MeshBasicMaterial({
+        color: baseColor.clone(),
+        transparent: true,
+        opacity: 0.11,
+        side: THREE.BackSide,
+        depthWrite: false,
+      });
+
+      const makeMesh = (pos, scl) => {
+        let geo;
+        if (r.isCapsule) {
+          geo = new THREE.CapsuleGeometry(r.capsuleRadius, r.capsuleLength, 10, 20);
+        } else {
+          geo = new THREE.SphereGeometry(r.radius, 36, 26);
+        }
+        const m = new THREE.Mesh(geo, matFn());
+        m.position.set(...pos);
+        m.scale.set(...scl);
+        m.userData.regionId = r.id;
+        m.userData.baseScale = [...scl];
+        brainGroup.add(m);
+        rayCandidates.push(m);
+
+        // Glow shell
+        let gGeo;
+        if (r.isCapsule) {
+          gGeo = new THREE.CapsuleGeometry(r.capsuleRadius + 0.05, r.capsuleLength, 8, 16);
+        } else {
+          gGeo = new THREE.SphereGeometry(r.radius + 0.05, 24, 18);
+        }
+        const gScl = [scl[0]*1.16, scl[1]*1.16, scl[2]*1.16];
+        const g = new THREE.Mesh(gGeo, glowMatFn());
+        g.position.set(...pos);
+        g.scale.set(...gScl);
+        g.userData.baseScale = gScl;
+        brainGroup.add(g);
+
+        return { m, g };
+      };
+
+      meshMap[r.id] = [];
+      glowMap[r.id] = [];
+
+      const positions = r.bilateral ? r.positions : [r.position];
+      positions.forEach(pos => {
+        const { m, g } = makeMesh(pos, r.scale);
+        meshMap[r.id].push(m);
+        glowMap[r.id].push(g);
+      });
+
+      // Extra lobule meshes (cerebellum bumps)
+      if (r.lobes) {
+        r.lobes.forEach(lobe => {
+          const lGeo = new THREE.SphereGeometry(r.radius, 30, 22);
+          const lm = new THREE.Mesh(lGeo, matFn());
+          lm.position.set(...lobe.pos);
+          lm.scale.set(...lobe.scl);
+          lm.userData.regionId = r.id;
+          lm.userData.baseScale = [...lobe.scl];
+          brainGroup.add(lm);
+          rayCandidates.push(lm);
+          meshMap[r.id].push(lm);
+
+          const lgScl = lobe.scl.map(s => s * 1.16);
+          const lg = new THREE.Mesh(
+            new THREE.SphereGeometry(r.radius + 0.04, 22, 16),
+            glowMatFn()
+          );
+          lg.position.set(...lobe.pos);
+          lg.scale.set(...lgScl);
+          lg.userData.baseScale = lgScl;
+          brainGroup.add(lg);
+          glowMap[r.id].push(lg);
+        });
+      }
+
+      /* ── floating label ── */
+      const div = document.createElement('div');
+      div.className = 'brain-label';
+      div.textContent = r.name;
+      div.dataset.rid = r.id;
+      const lObj = new CSS2DObject(div);
+
+      if (r.bilateral) {
+        lObj.position.set(...r.labelPosition);
+      } else {
+        lObj.position.set(
+          r.position[0] + (r.labelOffset[0] || 0),
+          r.position[1] + (r.labelOffset[1] || 0),
+          r.position[2] + (r.labelOffset[2] || 0)
+        );
+      }
+      brainGroup.add(lObj);
+      labelMap[r.id] = lObj;
+    });
+
+    /* ═══════════════════════════════════════════════════════════════════
+       CONNECTION LINES
+    ═══════════════════════════════════════════════════════════════════ */
+    let connectionObjects = [];
+
+    function getCenter(id) {
+      const r = REGION_MAP[id];
+      if (!r) return new THREE.Vector3();
+      if (r.bilateral) {
+        return new THREE.Vector3(...r.positions[0]).add(new THREE.Vector3(...r.positions[1])).multiplyScalar(0.5);
+      }
+      return new THREE.Vector3(...r.position);
+    }
+
+    function buildConnections(fromId) {
+      clearConnections();
+      const from = REGION_MAP[fromId];
+      if (!from) return;
+
+      const fromCenter = getCenter(fromId);
+      const fromColor  = new THREE.Color(from.color);
+
+      from.connections.forEach(toId => {
+        const to = REGION_MAP[toId];
+        if (!to) return;
+        const toCenter = getCenter(toId);
+        const toColor  = new THREE.Color(to.color);
+
+        // Arc via mid-point lifted up
+        const mid = fromCenter.clone().add(toCenter).multiplyScalar(0.5)
+                      .add(new THREE.Vector3(0, 0.9, 0));
+        const curve = new THREE.QuadraticBezierCurve3(
+          fromCenter.clone(), mid, toCenter.clone()
+        );
+
+        const pts = curve.getPoints(50);
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+
+        // Per-vertex gradient colours
+        const cols = [];
+        pts.forEach((_, i) => {
+          const t = i / (pts.length - 1);
+          const c = fromColor.clone().lerp(toColor, t);
+          cols.push(c.r, c.g, c.b);
+        });
+        geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+
+        const mat = new THREE.LineBasicMaterial({
+          vertexColors: true,
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+          linewidth: 1,
+        });
+
+        const line = new THREE.Line(geo, mat);
+        brainGroup.add(line);
+        connectionObjects.push({ line, born: performance.now() });
+      });
+    }
+
+    function clearConnections() {
+      connectionObjects.forEach(({ line }) => {
+        brainGroup.remove(line);
+        line.geometry.dispose();
+        line.material.dispose();
+      });
+      connectionObjects = [];
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       PANEL
+    ═══════════════════════════════════════════════════════════════════ */
+    const panel        = document.getElementById('panel');
+    const panelBody    = document.getElementById('panel-body');
+    const closeBtn     = document.getElementById('close-btn');
+    const resizeHandle = document.getElementById('resize-handle');
+
+    const PANEL_MIN = 300;
+    const PANEL_MAX = Math.min(800, Math.round(innerWidth * 0.6));
+
+    /* ── Canvas offset: shift brain left so it stays centred in visible space ── */
+    function updateCanvasOffset(animated = true) {
+      if (!animated) app.classList.add('no-transition');
+      if (panel.classList.contains('open')) {
+        app.style.transform = `translateX(-${panel.offsetWidth / 2}px)`;
+      } else {
+        app.style.transform = '';
+      }
+      if (!animated) requestAnimationFrame(() => app.classList.remove('no-transition'));
+    }
+
+    /* ── Drag-to-resize ── */
+    let resizing = false, rsStartX = 0, rsStartW = 0;
+
+    resizeHandle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      resizing = true;
+      rsStartX = e.clientX;
+      rsStartW = panel.offsetWidth;
+      resizeHandle.classList.add('active');
+      app.classList.add('no-transition');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (!resizing) return;
+      const dx = rsStartX - e.clientX;   // drag left → wider
+      const w  = Math.min(PANEL_MAX, Math.max(PANEL_MIN, rsStartW + dx));
+      panel.style.width = w + 'px';
+      updateCanvasOffset(false);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!resizing) return;
+      resizing = false;
+      resizeHandle.classList.remove('active');
+      app.classList.remove('no-transition');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+
+    function renderPanel(r) {
+      const connList = r.connections.map(id => REGION_MAP[id]).filter(Boolean);
+
+      // ── section renderer (handles all content types) ──
+      function renderSection(s, delay) {
+        let body;
+        if (s.type === 'paragraphs') {
+          body = `<div class="p-paragraphs">${
+            s.items.map(p => `<p class="p-para">${p}</p>`).join('')
+          }</div>`;
+        } else if (s.type === 'named-bullets') {
+          body = `<ul class="p-named-bullets">${
+            s.items.map(it =>
+              `<li><span class="p-nb-name">${it.name}:</span> ${it.desc}</li>`
+            ).join('')
+          }</ul>`;
+        } else {
+          // plain bullets — use existing p-list style
+          body = `<ul class="p-list">${
+            s.items.map(it => `<li>${it}</li>`).join('')
+          }</ul>`;
+        }
+        return `<div class="p-section" style="animation-delay:${delay.toFixed(2)}s">
+          <div class="p-section-label">${s.label}</div>${body}</div>`;
+      }
+
+      // ── build content sections ──
+      let contentHtml;
+      if (r.richSections) {
+        contentHtml = r.richSections
+          .map((s, i) => renderSection(s, 0.05 + i * 0.05))
+          .join('');
+      } else {
+        contentHtml = `
+          <div class="p-section" style="animation-delay:.05s">
+            <div class="p-section-label">Core Functions</div>
+            <ul class="p-list">${r.functions.map(f => `<li>${f}</li>`).join('')}</ul>
+          </div>
+          <div class="p-section" style="animation-delay:.10s">
+            <div class="p-section-label">Neurotransmitters &amp; Hormones</div>
+            <div class="p-tags">${r.neurotransmitters.map(n => `<span class="p-tag">${n}</span>`).join('')}</div>
+          </div>
+          <div class="p-section" style="animation-delay:.15s">
+            <div class="p-section-label">Real-Life Behaviors</div>
+            <ul class="p-behaviors">${r.behaviors.map(b => `<li>${b}</li>`).join('')}</ul>
+          </div>`;
+      }
+
+      const chipsDelay = r.richSections
+        ? (0.05 + r.richSections.length * 0.05).toFixed(2)
+        : '0.20';
+
+      panelBody.innerHTML = `
+        <div class="p-badge">
+          <div class="p-dot" style="background:${r.color}"></div>
+          <div class="p-category">${r.category}</div>
+        </div>
+        <h2 class="p-title">${r.name}</h2>
+        <div class="p-accent" style="background:${r.color}"></div>
+        ${contentHtml}
+        <div class="p-section" style="animation-delay:${chipsDelay}s">
+          <div class="p-section-label">Navigate to Region</div>
+          <div class="p-chips">
+            ${connList.map(c => `
+              <button class="p-chip" data-rid="${c.id}">
+                <div class="p-chip-dot" style="background:${c.color}"></div>
+                ${c.name}
+              </button>`).join('')}
+          </div>
+        </div>
+      `;
+
+      panelBody.querySelectorAll('.p-chip').forEach(btn => {
+        btn.addEventListener('click', () => selectRegion(btn.dataset.rid));
+      });
+    }
+
+    function openPanel(r) {
+      renderPanel(r);
+      panel.classList.add('open');
+      updateCanvasOffset();
+    }
+
+    function closePanel() {
+      panel.classList.remove('open');
+      updateCanvasOffset();
+      clearConnections();
+      resetAllHighlights();
+      selectedId = null;
+    }
+
+    closeBtn.addEventListener('click', closePanel);
+
+    /* ═══════════════════════════════════════════════════════════════════
+       INTERACTION STATE
+    ═══════════════════════════════════════════════════════════════════ */
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(-10, -10);
+    let mx = 0, my = 0;
+    let hoveredId  = null;
+    let selectedId = null;
+    const tooltip  = document.getElementById('tooltip');
+    const hint     = document.getElementById('hint');
+    let hintDismissed = false;
+
+    window.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      // Use canvas rect so raycasting stays correct after CSS translateX shift
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+      mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+    });
+
+    window.addEventListener('click', e => {
+      if (panel.contains(e.target)) return;
+      if (hoveredId) {
+        selectRegion(hoveredId);
+        if (!hintDismissed) {
+          hint.classList.add('hidden');
+          hintDismissed = true;
+        }
+      } else if (selectedId && !panel.contains(e.target)) {
+        closePanel();
+      }
+    });
+
+    function selectRegion(id) {
+      selectedId = id;
+      const r = REGION_MAP[id];
+      if (!r) return;
+
+      // visual state
+      REGIONS.forEach(reg => {
+        const active = reg.id === id;
+        meshMap[reg.id].forEach(m => {
+          m.material.emissiveIntensity = active ? 0.30 : 0.07;
+        });
+        glowMap[reg.id].forEach(g => {
+          g.material.opacity = active ? 0.24 : 0.11;
+        });
+        document.querySelectorAll(`.brain-label[data-rid="${reg.id}"]`).forEach(el => {
+          el.classList.toggle('active', active);
+        });
+      });
+
+      buildConnections(id);
+      openPanel(r);
+    }
+
+    function resetAllHighlights() {
+      REGIONS.forEach(r => {
+        meshMap[r.id].forEach(m => {
+          m.material.emissiveIntensity = 0.07;
+          const bs = m.userData.baseScale;
+          if (bs) m.scale.set(...bs);
+        });
+        glowMap[r.id].forEach(g => {
+          g.material.opacity = 0.11;
+          const bs = g.userData.baseScale;
+          if (bs) g.scale.set(...bs);
+        });
+        document.querySelectorAll(`.brain-label[data-rid="${r.id}"]`).forEach(el => el.classList.remove('active'));
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       ANIMATION LOOP
+    ═══════════════════════════════════════════════════════════════════ */
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+
+      /* ── Hover ── */
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(rayCandidates, false);
+      const newHover = hits.length ? hits[0].object.userData.regionId : null;
+
+      if (newHover !== hoveredId) {
+        // un-hover old
+        if (hoveredId && hoveredId !== selectedId) {
+          meshMap[hoveredId]?.forEach(m => m.material.emissiveIntensity = 0.07);
+          glowMap[hoveredId]?.forEach(g => g.material.opacity = 0.11);
+          document.querySelectorAll(`.brain-label[data-rid="${hoveredId}"]`).forEach(el => el.classList.remove('active'));
+        }
+        // hover new
+        if (newHover && newHover !== selectedId) {
+          meshMap[newHover]?.forEach(m => m.material.emissiveIntensity = 0.20);
+          glowMap[newHover]?.forEach(g => g.material.opacity = 0.22);
+          document.querySelectorAll(`.brain-label[data-rid="${newHover}"]`).forEach(el => el.classList.add('active'));
+        }
+        hoveredId = newHover;
+      }
+
+      /* ── Tooltip ── */
+      if (hoveredId) {
+        tooltip.textContent = REGION_MAP[hoveredId].name;
+        tooltip.style.left = mx + 'px';
+        tooltip.style.top  = my + 'px';
+        tooltip.style.opacity = '1';
+        document.body.style.cursor = 'pointer';
+      } else {
+        tooltip.style.opacity = '0';
+        document.body.style.cursor = 'default';
+      }
+
+      /* ── Breathing / pulse on active region ── */
+      REGIONS.forEach(r => {
+        const isActive = r.id === selectedId || r.id === hoveredId;
+        const breathe  = isActive ? 1 + 0.024 * Math.sin(t * 2.6) : 1;
+        meshMap[r.id].forEach(m => {
+          const bs = m.userData.baseScale;
+          m.scale.set(bs[0]*breathe, bs[1]*breathe, bs[2]*breathe);
+        });
+        glowMap[r.id].forEach(g => {
+          const bs = g.userData.baseScale;
+          g.scale.set(bs[0]*breathe, bs[1]*breathe, bs[2]*breathe);
+        });
+      });
+
+      /* ── Connection line pulse ── */
+      connectionObjects.forEach(({ line, born }) => {
+        const age = (performance.now() - born) / 1000;
+        const fadeIn = Math.min(age * 2.2, 1);
+        const pulse  = 0.72 + 0.28 * Math.sin(age * 3.2);
+        line.material.opacity = fadeIn * 0.58 * pulse;
+      });
+
+      controls.update();
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+
+    /* ── Resize ── */
+    window.addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+      labelRenderer.setSize(innerWidth, innerHeight);
+    });
+
+    /* ── Boot ── */
+    setTimeout(() => document.getElementById('loading').classList.add('hidden'), 1900);
+    animate();
+  </script>
+</body>
+</html>
