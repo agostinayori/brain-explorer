@@ -109,6 +109,18 @@
       letter-spacing: 2px; text-transform: uppercase;
       color: var(--text-3); margin-top: 5px;
     }
+    .easter-egg {
+      font-size: 11px; font-weight: 400;
+      color: var(--text-2); margin-top: 18px;
+      text-decoration: underline; cursor: pointer;
+      pointer-events: auto;
+    }
+    .easter-egg-revealed {
+      font-size: 11px; line-height: 1.4; color: var(--text-2);
+    }
+    .easter-egg-citation {
+      font-size: 8px; color: var(--text-3); margin-top: 3px;
+    }
     .region-counter { text-align: right; }
     .region-counter strong {
       display: block; font-size: 28px; font-weight: 300;
@@ -132,6 +144,234 @@
     }
     .hint.hidden { opacity: 0; }
     .hint-sep { margin: 0 8px; opacity: .35; }
+
+    /* ── Navigation tabs ────────────────────────────────────────────── */
+    .nav-tabs {
+      display: flex; align-items: center; gap: 3px;
+      background: rgba(224,220,214,.96);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(26,26,46,.14);
+      border-radius: 100px;
+      padding: 5px;
+      pointer-events: auto;
+      position: absolute;
+      left: 50%;
+      top: 28px;
+      transform: translateX(-50%);
+    }
+    .nav-tab {
+      padding: 9px 24px;
+      border: none; background: transparent;
+      border-radius: 100px;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: background .18s, color .18s, box-shadow .18s;
+      white-space: nowrap;
+    }
+    .nav-tab:hover:not(.active) { color: var(--text-1); }
+    .nav-tab.active {
+      background: var(--white);
+      color: var(--text-1);
+      box-shadow: 0 1px 6px rgba(26,26,46,.12);
+    }
+
+    /* ── Temporal Structure page ────────────────────────────────────── */
+    .temporal-placeholder {
+      display: none;
+      position: fixed; inset: 0;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      overflow-y: auto;
+      background: var(--bg);
+      z-index: 5;
+      pointer-events: none;
+    }
+    .temporal-placeholder.active {
+      display: flex;
+      pointer-events: auto;
+    }
+
+    .ts-content {
+      width: 100%; max-width: 980px;
+      margin: 0 auto;
+      padding: 108px 52px 88px;
+    }
+
+    .ts-page-header { margin-bottom: 50px; }
+    .ts-page-eyebrow {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 2.2px; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 10px;
+    }
+    .ts-page-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 44px; font-weight: 700;
+      color: var(--text-1); letter-spacing: -0.5px;
+      line-height: 1.1;
+    }
+
+    .ts-intro {
+      font-size: 15px; color: var(--text-2);
+      line-height: 1.72; margin-bottom: 26px;
+    }
+
+    .ts-quote {
+      border-left: 2px solid rgba(26,26,46,.14);
+      margin: 0 0 58px 0;
+      padding: 4px 0 4px 34px;
+    }
+    .ts-quote p {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      font-size: 15.5px; color: var(--text-2);
+      line-height: 1.82; margin-bottom: 22px;
+    }
+    .ts-quote p:last-child { margin-bottom: 0; }
+
+    .ts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .ts-card {
+      border-radius: 16px;
+      padding: 26px 24px 22px;
+      min-height: 128px;
+      position: relative;
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+      text-align: center;
+      align-items: center;
+    }
+    .ts-card.available {
+      background: var(--cc);
+      cursor: pointer;
+      transition: transform .14s ease, box-shadow .14s ease;
+    }
+    .ts-card.available:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(26,26,46,.13);
+    }
+    .ts-card.soon {
+      background: color-mix(in srgb, var(--cc) 20%, white);
+      border: 1px solid var(--border);
+    }
+    .ts-card-title {
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-1); line-height: 1.5;
+    }
+    .ts-card.soon .ts-card-title { color: var(--text-3); }
+    .ts-card-sub {
+      font-size: 11px; color: var(--text-2);
+      margin-top: 6px; line-height: 1.5;
+      letter-spacing: 0.3px;
+    }
+    .ts-card.soon .ts-card-sub { color: var(--text-3); }
+    .ts-card-badge {
+      align-self: flex-start;
+      font-size: 9.5px; font-weight: 600;
+      letter-spacing: 1.4px; text-transform: uppercase;
+      color: var(--text-3);
+      background: rgba(255,255,255,.65);
+      border-radius: 100px;
+      padding: 3px 9px;
+      margin-top: 16px;
+    }
+
+    /* ── Temporal modal ─────────────────────────────────────────────── */
+    .ts-modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(26,26,46,.24);
+      z-index: 100;
+      opacity: 0;
+      transition: opacity .28s ease;
+      pointer-events: none;
+    }
+    .ts-modal-overlay.active {
+      display: flex;
+      align-items: center; justify-content: center;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .ts-modal {
+      background: var(--white);
+      border-radius: 20px;
+      width: 90%;
+      max-width: 620px;
+      max-height: 80vh;
+      padding: 50px 44px 44px;
+      position: relative;
+      box-shadow: 0 20px 80px rgba(26,26,46,.22);
+      overflow-y: auto;
+      opacity: 0;
+      transform: scale(0.92);
+      transition: opacity .28s ease, transform .28s ease;
+    }
+    .ts-modal-overlay.active .ts-modal {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .ts-modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px; height: 32px;
+      border: none;
+      background: var(--bg);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-2);
+      transition: background .15s;
+      z-index: 100;
+    }
+    .ts-modal-close:hover { background: var(--border); }
+
+    .ts-modal-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 34px; font-weight: 700;
+      color: var(--text-1);
+      line-height: 1.15;
+      margin-bottom: 26px;
+      letter-spacing: -0.3px;
+    }
+
+    .ts-modal-text {
+      font-size: 15px;
+      color: var(--text-2);
+      line-height: 1.74;
+    }
+
+    #ts-modal-content {
+      font-size: 15px;
+      color: var(--text-2);
+      line-height: 1.78;
+    }
+    #ts-modal-content p {
+      margin-bottom: 18px;
+    }
+    #ts-modal-content p:last-child {
+      margin-bottom: 0;
+    }
+    #ts-modal-content h3 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 18px; font-weight: 700;
+      color: var(--text-1);
+      margin: 32px 0 14px 0;
+      line-height: 1.3;
+    }
+    #ts-modal-content em {
+      font-style: italic;
+    }
 
     /* ── Tooltip ──────────────────────────────────────────────────────── */
     #tooltip {
@@ -219,6 +459,7 @@
       padding: 44px 38px 52px 26px;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
+      display: flex; flex-direction: column;
     }
     .panel-inner::-webkit-scrollbar { width: 4px; }
     .panel-inner::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
@@ -374,6 +615,36 @@
     .p-title   { animation: fadeUp .28s ease both; }
     .p-badge   { animation: fadeUp .22s ease both; }
     .p-accent  { animation: fadeUp .32s ease both; }
+
+    /* Centered content for Coming Soon regions */
+    .p-centered-wrapper {
+      display: flex; flex-direction: column;
+      flex: 1; justify-content: center;
+      align-items: center; text-align: center;
+    }
+    .p-centered-section {
+      width: 100%;
+    }
+    .p-centered-section .p-section {
+      animation: none !important;
+    }
+    .p-centered-section .p-section-label {
+      font-size: 28px; font-weight: 700;
+      color: var(--text-1); margin-bottom: 16px;
+    }
+    .p-centered-section .p-list {
+      list-style: none; margin: 0; padding: 0;
+      font-size: 13px; line-height: 1.6;
+      color: var(--text-2);
+    }
+    .p-centered-section .p-list li {
+      font-size: 13px; list-style: none; margin: 0;
+    }
+    .p-navigation-section {
+      padding-top: 24px; margin-top: 0;
+      border-top: 1px solid var(--border);
+      animation: fadeUp .35s ease both !important;
+    }
   </style>
 </head>
 <body>
@@ -393,11 +664,12 @@
     <div>
       <div class="app-title">Brain Explorer</div>
       <div class="app-sub">Interactive Neural Atlas</div>
+      <div class="easter-egg" id="free-will-easter-egg">Measure your free will →</div>
     </div>
-    <div class="region-counter">
-      <strong>7</strong>
-      <span>Regions Mapped</span>
-    </div>
+    <nav class="nav-tabs" id="nav-tabs">
+      <button class="nav-tab active" data-view="brain">Brain Regions</button>
+      <button class="nav-tab"        data-view="temporal">Temporal Structure</button>
+    </nav>
   </header>
 
   <!-- Hint pill -->
@@ -407,6 +679,104 @@
     Scroll to zoom
     <span class="hint-sep">·</span>
     Click a region to explore
+  </div>
+
+  <!-- Temporal Structure page -->
+  <div class="temporal-placeholder" id="temporal-placeholder">
+    <div class="ts-content">
+
+      <div class="ts-page-header">
+        <h1 class="ts-page-title">Temporal Structure</h1>
+      </div>
+
+      <p class="ts-intro">To explain the approach of this section, let me quote Sapolsky:</p>
+
+      <blockquote class="ts-quote">
+        <p>A behavior has just occurred. Why did it happen? Your first category of explanation is going to be a neurobiological one. What went on in that person's brain a second before the behavior happened? Now pull out to a slightly larger field of vision, your next category of explanation, a little earlier in time. What sight, sound, or smell in the previous seconds to minutes triggered the nervous system to produce that behavior? On to the next explanatory category. What hormones acted hours to days earlier to change how responsive that individual was to the sensory stimuli that trigger the nervous system to produce the behavior? And by now you've increased your field of vision to be thinking about neurobiology and the sensory world of our environment and short-term endocrinology in trying to explain what happened.</p>
+        <p>And you just keep expanding. What features of the environment in the prior weeks to years changed the structure and function of that person's brain and thus changed how it responded to those hormones and environmental stimuli? Then you go further back to the childhood of the individual, their fetal environment, then their genetic makeup. And then you increase the view to encompass factors larger than that one individual—how has culture shaped the behavior of people living in that individual's group?—what ecological factors helped shape that culture—expanding and expanding until considering events umpteen millennia ago and the evolution of that behavior.</p>
+      </blockquote>
+
+      <div class="ts-grid">
+
+        <div class="ts-card available" style="--cc:#a8d5a2">
+          <div>
+            <div class="ts-card-title">One Second Before</div>
+          </div>
+        </div>
+
+        <div class="ts-card available" style="--cc:#e8b4b8">
+          <div>
+            <div class="ts-card-title">Seconds to Minutes Before</div>
+          </div>
+        </div>
+
+        <div class="ts-card soon" style="--cc:#c4b0d8">
+          <div>
+            <div class="ts-card-title">Hours to Days Before</div>
+          </div>
+          <span class="ts-card-badge">Coming soon</span>
+        </div>
+
+        <div class="ts-card soon" style="--cc:#f5c5a0">
+          <div>
+            <div class="ts-card-title">Days to Months Before</div>
+          </div>
+          <span class="ts-card-badge">Coming soon</span>
+        </div>
+
+        <div class="ts-card soon" style="--cc:#96c8e0">
+          <div>
+            <div class="ts-card-title">Adolescence</div>
+            <div class="ts-card-sub">Dude, Where's My Frontal Cortex?</div>
+          </div>
+          <span class="ts-card-badge">Coming soon</span>
+        </div>
+
+        <div class="ts-card soon" style="--cc:#9fd8c8">
+          <div>
+            <div class="ts-card-title">Back to the Crib, Back to the Womb</div>
+            <div class="ts-card-sub">Early development &amp; childhood experience</div>
+          </div>
+          <span class="ts-card-badge">Coming soon</span>
+        </div>
+
+        <div class="ts-card soon" style="--cc:#d4c5a0">
+          <div>
+            <div class="ts-card-title">Back to When You Were Just a Fertilized Egg</div>
+            <div class="ts-card-sub">Genes, epigenetics &amp; what you inherited</div>
+          </div>
+          <span class="ts-card-badge">Coming soon</span>
+        </div>
+
+        <div class="ts-card soon" style="--cc:#c8b8e0">
+          <div>
+            <div class="ts-card-title">Centuries to Millennia Before</div>
+          </div>
+          <span class="ts-card-badge">Coming soon</span>
+        </div>
+
+        <div class="ts-card soon" style="--cc:#e0b898">
+          <div>
+            <div class="ts-card-title">The Evolution of Behavior</div>
+          </div>
+          <span class="ts-card-badge">Coming soon</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Temporal modal -->
+  <div class="ts-modal-overlay" id="ts-modal-overlay">
+    <div class="ts-modal">
+      <button class="ts-modal-close" id="ts-modal-close" aria-label="Close">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M1 1L12 12M12 1L1 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <h2 class="ts-modal-title" id="ts-modal-title">Section Title</h2>
+      <div id="ts-modal-content"></div>
+    </div>
   </div>
 
   <!-- Tooltip -->
@@ -453,7 +823,7 @@
         position: [0, 0.68, 1.26],
         scale:    [1.92, 1.34, 1.12],
         radius: 0.65,
-        labelOffset: [0, 1.52, 0.20],
+        labelOffset: [0, 0.82, 0.20],
         connections: ['amygdala','hippocampus','nucleus_accumbens','hypothalamus'],
         richSections: [
           {
@@ -550,7 +920,7 @@
         positions: [[-0.97, 0.04, 0.26],[0.97, 0.04, 0.26]],
         scale: [0.52, 0.44, 0.62],
         radius: 0.60,
-        labelPosition: [-1.82, 0.56, 0.26],
+        labelPosition: [-1.45, 0.40, 0.26],
         connections: ['frontal','hippocampus','hypothalamus','nucleus_accumbens'],
         richSections: [
           {
@@ -611,24 +981,18 @@
         color: '#c4b0d8',
         emissiveHex: 0x5c38a0,
         bilateral: true,
-        positions: [[-1.18, -0.22, -0.16],[1.18, -0.22, -0.16]],
+        positions: [[-1.18, -0.48, -0.16],[1.18, -0.48, -0.16]],
         scale: [0.52, 0.40, 1.16],
         radius: 0.60,
-        labelPosition: [-1.92, -0.22, -0.16],
+        labelPosition: [-1.92, -0.48, -0.16],
         connections: ['frontal','amygdala','hypothalamus'],
-        functions: [
-          'Forming new long-term declarative memories',
-          'Spatial navigation and cognitive mapping',
-          'Memory consolidation during sleep',
-          'Contextual and episodic learning',
-          'Linking memories to emotional context'
-        ],
-        neurotransmitters: ['Acetylcholine','Glutamate','GABA','Serotonin','BDNF'],
-        behaviors: [
-          'Remembering every detail of a meaningful trip',
-          'Navigating a new neighborhood after one visit',
-          'Waking with a clear memory of last night\'s dream',
-          'A scent instantly transporting you to a childhood memory'
+        centeredContent: true,
+        richSections: [
+          {
+            label: 'Coming soon.',
+            type: 'paragraph',
+            items: ['It\'s a dense book and, despite appearances, I do have a life.']
+          }
         ]
       },
       {
@@ -640,21 +1004,15 @@
         position: [0, -0.35, 0.15],
         scale: [0.55, 0.40, 0.55],
         radius: 0.60,
-        labelOffset: [0.94, 0.32, 0],
+        labelOffset: [0.52, 0.32, 0],
         connections: ['frontal','amygdala','hippocampus','nucleus_accumbens'],
-        functions: [
-          'Regulating hunger, thirst, and satiety',
-          'Maintaining core body temperature',
-          'Governing circadian rhythms and sleep cycles',
-          'Hormonal control via the pituitary gland',
-          'Autonomic nervous system regulation'
-        ],
-        neurotransmitters: ['CRH','TRH','GnRH','Oxytocin','Vasopressin','Dopamine'],
-        behaviors: [
-          'Sudden ravenous hunger after skipping lunch',
-          'Shivering when cold, sweating when hot',
-          'Naturally waking at the same time each morning',
-          'Intense thirst after eating something very salty'
+        centeredContent: true,
+        richSections: [
+          {
+            label: 'Coming soon.',
+            type: 'paragraph',
+            items: ['It\'s a dense book and, despite appearances, I do have a life.']
+          }
         ]
       },
       {
@@ -666,7 +1024,7 @@
         position: [0, 0.06, 0.52],
         scale: [0.46, 0.42, 0.46],
         radius: 0.60,
-        labelOffset: [0.94, 0.36, 0],
+        labelOffset: [0.52, 0.36, 0],
         connections: ['frontal','amygdala','hypothalamus'],
         subtitle: 'The Mesolimbic/Mesocortical Dopamine System',
         richSections: [
@@ -757,26 +1115,20 @@
         position: [0, -1.04, -1.60],
         scale: [1.46, 0.72, 0.98],
         radius: 0.65,
-        labelOffset: [0, -1.18, 0],
+        labelOffset: [0, -0.88, 0],
         lobes: [
           { pos: [-0.65, -0.66, -1.54], scl: [0.70, 0.56, 0.66] },
           { pos: [ 0.65, -0.66, -1.54], scl: [0.70, 0.56, 0.66] },
           { pos: [ 0.00, -0.64, -1.45], scl: [0.54, 0.52, 0.60] },
         ],
         connections: ['brainstem'],
-        functions: [
-          'Motor coordination and postural balance',
-          'Fine-tuning voluntary movement',
-          'Timing and rhythm in motor sequences',
-          'Storing procedural and skill-based memory',
-          'Predicting sensory consequences of motion'
-        ],
-        neurotransmitters: ['GABA','Glutamate','Norepinephrine','Serotonin','Acetylcholine'],
-        behaviors: [
-          'Riding a bicycle without thinking about balance',
-          'Typing fluently without watching the keyboard',
-          'Catching an object tossed unexpectedly your way',
-          'The deep muscle memory of playing a musical instrument'
+        centeredContent: true,
+        richSections: [
+          {
+            label: 'Coming soon.',
+            type: 'paragraph',
+            items: ['It\'s a dense book and, despite appearances, I do have a life.']
+          }
         ]
       },
       {
@@ -792,19 +1144,13 @@
         scale: [1.0, 1.0, 1.0],
         labelOffset: [0.80, 0, 0],
         connections: ['cerebellum','hypothalamus'],
-        functions: [
-          'Regulating breathing and heart rate automatically',
-          'Controlling levels of arousal, alertness, and sleep',
-          'Relaying signals between brain and spinal cord',
-          'Governing swallowing, coughing, and vomiting reflexes',
-          'Maintaining blood pressure and cardiovascular reflexes'
-        ],
-        neurotransmitters: ['Acetylcholine','Norepinephrine','Serotonin','Dopamine','GABA'],
-        behaviors: [
-          'Continuing to breathe automatically during deep sleep',
-          'Heart rate surging in response to perceived danger',
-          'Waking up when your name is called across a quiet room',
-          'Coughing reflexively when something enters the airway'
+        centeredContent: true,
+        richSections: [
+          {
+            label: 'Coming soon.',
+            type: 'paragraph',
+            items: ['It\'s a dense book and, despite appearances, I do have a life.']
+          }
         ]
       }
     ];
@@ -867,6 +1213,7 @@
        BUILD BRAIN GEOMETRY
     ═══════════════════════════════════════════════════════════════════ */
     const brainGroup = new THREE.Group();
+    brainGroup.position.y = -0.30;
     scene.add(brainGroup);
 
     /* ── Outer cerebral hemisphere hulls (non-interactive silhouette) ── */
@@ -1180,25 +1527,51 @@
         ? (0.05 + r.richSections.length * 0.05).toFixed(2)
         : '0.20';
 
-      panelBody.innerHTML = `
-        <div class="p-badge">
-          <div class="p-dot" style="background:${r.color}"></div>
-          <div class="p-category">${r.category}</div>
-        </div>
-        <h2 class="p-title">${r.name}</h2>
-        <div class="p-accent" style="background:${r.color}"></div>
-        ${contentHtml}
-        <div class="p-section" style="animation-delay:${chipsDelay}s">
-          <div class="p-section-label">Navigate to Region</div>
-          <div class="p-chips">
-            ${connList.map(c => `
-              <button class="p-chip" data-rid="${c.id}">
-                <div class="p-chip-dot" style="background:${c.color}"></div>
-                ${c.name}
-              </button>`).join('')}
+      if (r.centeredContent) {
+        panelBody.innerHTML = `
+          <div class="p-badge">
+            <div class="p-dot" style="background:${r.color}"></div>
+            <div class="p-category">${r.category}</div>
           </div>
-        </div>
-      `;
+          <h2 class="p-title">${r.name}</h2>
+          <div class="p-accent" style="background:${r.color}"></div>
+          <div class="p-centered-wrapper">
+            <div class="p-centered-section">
+              ${contentHtml}
+            </div>
+          </div>
+          <div class="p-section p-navigation-section" style="animation-delay:${chipsDelay}s">
+            <div class="p-section-label">Navigate to Region</div>
+            <div class="p-chips">
+              ${connList.map(c => `
+                <button class="p-chip" data-rid="${c.id}">
+                  <div class="p-chip-dot" style="background:${c.color}"></div>
+                  ${c.name}
+                </button>`).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        panelBody.innerHTML = `
+          <div class="p-badge">
+            <div class="p-dot" style="background:${r.color}"></div>
+            <div class="p-category">${r.category}</div>
+          </div>
+          <h2 class="p-title">${r.name}</h2>
+          <div class="p-accent" style="background:${r.color}"></div>
+          ${contentHtml}
+          <div class="p-section" style="animation-delay:${chipsDelay}s">
+            <div class="p-section-label">Navigate to Region</div>
+            <div class="p-chips">
+              ${connList.map(c => `
+                <button class="p-chip" data-rid="${c.id}">
+                  <div class="p-chip-dot" style="background:${c.color}"></div>
+                  ${c.name}
+                </button>`).join('')}
+            </div>
+          </div>
+        `;
+      }
 
       panelBody.querySelectorAll('.p-chip').forEach(btn => {
         btn.addEventListener('click', () => selectRegion(btn.dataset.rid));
@@ -1369,6 +1742,117 @@
       renderer.setSize(innerWidth, innerHeight);
       labelRenderer.setSize(innerWidth, innerHeight);
     });
+
+    /* ── Navigation tabs ── */
+    const temporalPlaceholder = document.getElementById('temporal-placeholder');
+    const appEl   = document.getElementById('app');
+    const hintEl2 = document.getElementById('hint');
+
+    document.getElementById('nav-tabs').addEventListener('click', e => {
+      const btn = e.target.closest('.nav-tab');
+      if (!btn) return;
+      const view = btn.dataset.view;
+
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (view === 'temporal') {
+        closePanel();
+        appEl.style.display   = 'none';
+        hintEl2.style.display = 'none';
+        temporalPlaceholder.classList.add('active');
+      } else {
+        appEl.style.display   = '';
+        hintEl2.style.display = '';
+        temporalPlaceholder.classList.remove('active');
+      }
+    });
+
+    /* ── Temporal modal ── */
+    const tsModalOverlay = document.getElementById('ts-modal-overlay');
+    const tsModalClose   = document.getElementById('ts-modal-close');
+    const tsModalTitle   = document.getElementById('ts-modal-title');
+    const tsModalContent = document.getElementById('ts-modal-content');
+
+    const tsModalData = {
+      'ONE SECOND BEFORE': `
+        <p>One second before a behavior occurs, something happens in the brain. A neuron fires, a circuit activates, a cascade of electrochemical signals converges — and a muscle moves. Someone pulls a trigger. Someone extends a hand. Someone says something they'll regret, or something that will change another person's day entirely. The behavior exists in the world now, for better or worse.</p>
+        <p>Sapolsky's central argument in this section is deceptively simple: if you want to understand why a behavior happened, the brain is where you start. Not personality, not character, not willpower — the brain. The specific regions that were active, the signals they were sending each other, the neurochemical environment they were operating in at that exact moment. One second before is the most proximal explanation for any behavior, and it's the foundation on which everything else in this book is built.</p>
+        <p>But here's what makes this framework radical: Sapolsky isn't saying the brain causes behavior in some simple, deterministic way. He's saying the brain is the final common pathway — the place where every other influence (hormones, childhood, culture, genes, evolution) ultimately converges to produce action. What happened one second before the behavior is the last step in a chain that may stretch back decades, or millennia. Understanding that last step is essential. But it's only the beginning.</p>
+        <h3>What's happening in that second</h3>
+        <p>In the moments just before a behavior, different brain regions are doing very different things — and which ones are most active shapes everything about what happens next. The amygdala may be sounding an alarm, flooding the system with threat signals. The frontal cortex may be trying to contextualize, regulate, slow things down. The nucleus accumbens may be firing in anticipation of reward, pulling behavior toward something desired. The hippocampus is retrieving context from memory. The hypothalamus is preparing the body for whatever comes next.</p>
+        <p>These regions don't operate independently — they're in constant conversation, and the nature of that conversation determines the behavior. Is the amygdala overwhelming the frontal cortex, or is the frontal cortex successfully modulating the amygdala? Is the dopamine system driving pursuit, or is it quiet? The behavior that emerges is the output of all of this — a negotiation between systems that happened faster than conscious thought.</p>
+        <p><em>(For a detailed look at how each of these regions works, what they produce, and how they connect to each other — explore the Brain Regions view.)</em></p>
+        <h3>The same brain, different behaviors</h3>
+        <p>One of the most important insights from this section is that the brain is not a fixed machine that always produces the same output. The same person, with the same brain, can behave very differently depending on the state that brain is in. Sleep-deprived or well-rested. Flooded with stress hormones or calm. Hungry or fed. In the presence of someone threatening or someone safe.</p>
+        <p>This is why "he's just that kind of person" is almost always an incomplete explanation. People aren't consistent across contexts — brains aren't either. The one-second-before picture is always a snapshot of a brain in a particular state, shaped by everything that came before it.</p>
+        <h3>Why this matters</h3>
+        <p>Understanding the neurobiology of behavior doesn't reduce people to their brain chemistry. It does something more useful: it replaces vague moral intuitions with actual explanations. When you understand that a fear response is an amygdala firing before the frontal cortex has had time to catch up, you stop asking "why didn't they just control themselves" and start asking better questions — about what put that brain in that state, and what might change it.</p>
+        <p>That shift in framing — from character to biology, from judgment to mechanism — is what the rest of this book is about. One second before is where it starts.</p>
+      `,
+      'SECONDS TO MINUTES BEFORE': `
+        <p>If one second before a behavior you find the brain, a few seconds to minutes before that you find the world. The sensory environment — what you see, hear, smell, feel — is constantly feeding information into the nervous system, and that information shapes what the brain does next. This chapter is about the triggers: the stimuli that set the whole cascade in motion.</p>
+        <p>The key question Sapolsky asks here isn't just what triggered a behavior, but whether the person was even aware of it. Because a lot of the time, they weren't.</p>
+        <h3>Sensory cues and the brain</h3>
+        <p>Every second, the brain is receiving an enormous amount of sensory information and deciding — largely outside of conscious awareness — what's relevant and what isn't. A face in a crowd. A tone of voice. A smell that shouldn't be there. These inputs travel through the thalamus and get routed to the relevant brain regions almost instantly. The amygdala, in particular, is monitoring this stream constantly, looking for anything that might signal threat, opportunity, or social significance.</p>
+        <p>What's important to understand is that this process is not neutral. The brain doesn't process sensory information like a camera records a scene. It filters it through everything it already knows — past experiences, learned associations, cultural context — and responds accordingly. Two people can be exposed to the exact same stimulus and have completely different neurological responses, because their brains have been shaped differently by what came before.</p>
+        <h3>Conscious vs. unconscious triggers</h3>
+        <p>One of the more unsettling findings Sapolsky covers in this chapter is how much of our behavior is triggered by stimuli we're not consciously aware of. Subliminal priming studies consistently show that exposure to words, images, or concepts — even when they're presented too briefly to register consciously — can measurably shift behavior in the seconds and minutes that follow. Being primed with words associated with aggression makes people more likely to interpret ambiguous situations as threatening. Being primed with concepts of elderly people makes people walk more slowly leaving the lab.</p>
+        <p>We like to think our behaviors arise from deliberate choices. The evidence suggests that a significant portion of them arise from stimuli we never consciously registered — which is either fascinating or deeply inconvenient, depending on how attached you are to the idea of being in charge.</p>
+        <h3>The body talking back: interoception</h3>
+        <p>Not all sensory input comes from the outside world. The brain is also constantly receiving signals from the body itself — heart rate, gut tension, muscle tightness, breathing patterns — and integrating that information into its assessment of what's happening and how to respond. This is called interoception, and it turns out to be far more influential on behavior than most people realize.</p>
+        <p>A racing heart doesn't just follow fear — it can cause it. When the body is in a state of physiological arousal (from exercise, caffeine, a near-miss in traffic), the brain tends to interpret that arousal as emotionally meaningful and attribute it to whatever is most salient in the environment at that moment. This is the neurological basis of misattribution of arousal — you're agitated for one reason, but your brain assigns that agitation to whatever is in front of you. The body's internal state, in other words, is itself a sensory trigger, shaping how the brain processes everything else that's coming in.</p>
+        <h3>The uncomfortable case of race</h3>
+        <p>Sapolsky doesn't shy away from one of the most studied — and most uncomfortable — examples of unconscious sensory triggering: the brain's response to race. Decades of research using implicit association tests and neuroimaging consistently show that the amygdala responds more strongly and more quickly to faces of people from different racial groups, particularly in people who have grown up in racially homogeneous environments or cultures with strong in-group/out-group dynamics.</p>
+        <p>This is not a comfortable finding. It doesn't mean racism is inevitable or biological destiny — the frontal cortex can learn to override these responses, and context matters enormously. But it does mean that the trigger is real, that it operates largely below the level of conscious awareness, and that pretending it doesn't exist is not a strategy.</p>
+        <h3>Ethology and the specificity of triggers</h3>
+        <p>This chapter also introduces the field of ethology — the study of animal behavior in natural environments — and one of its key insights: that animals (including humans) don't respond to the world in general, they respond to very specific stimuli in very specific ways. A frog's visual system is wired to detect small, moving dark objects and largely ignore everything else. A baby goose will imprint on whatever moves past it in the first hours of life. These are called releasing stimuli — specific triggers that unlock specific behaviors.</p>
+        <p>Humans are more flexible than frogs, but the principle isn't entirely different. Certain stimuli — a baby's face, a direct stare, a sudden loud noise — reliably activate specific brain responses across cultures. We're not blank slates responding to the world uniformly. We're organisms with particular sensitivities, shaped by evolution, that make us more reactive to some things than others. The comforting news is that we have a frontal cortex that can override a lot of this. The less comforting news is that it doesn't always bother.</p>
+        <h3>What this adds to the picture</h3>
+        <p>The one-second-before view gave us the brain. The seconds-to-minutes view gives us the world that activated it — including the world inside the body. Together they start to tell a more complete story: a behavior happens because a particular brain, in a particular state, encountered a particular stimulus. Change any of those three variables and you get a different behavior.</p>
+        <p>And crucially, most of those variables were set in motion long before the moment of action — by hormones, by history, by culture, by everything that shaped that brain before it ever encountered that trigger.</p>
+        <p><em>(For a detailed look at how the amygdala and frontal cortex process these sensory triggers — explore the Brain Regions view.)</em></p>
+      `
+    };
+
+    function openTsModal(cardTitle) {
+      tsModalTitle.textContent = cardTitle;
+      const content = tsModalData[cardTitle.toUpperCase()] || '<p>Content coming soon</p>';
+      tsModalContent.innerHTML = content;
+      tsModalOverlay.classList.add('active');
+    }
+
+    function closeTsModal() {
+      const tsModal = document.querySelector('.ts-modal');
+      tsModal.scrollTop = 0;
+      tsModalOverlay.classList.remove('active');
+    }
+
+    tsModalClose.addEventListener('click', closeTsModal);
+    tsModalOverlay.addEventListener('click', e => {
+      if (e.target === tsModalOverlay) closeTsModal();
+    });
+
+    document.querySelectorAll('.ts-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const title = card.querySelector('.ts-card-title').textContent;
+        openTsModal(title);
+      });
+    });
+
+    const easterEgg = document.getElementById('free-will-easter-egg');
+    if (easterEgg) {
+      let easterEggRevealed = false;
+      easterEgg.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!easterEggRevealed) {
+          easterEggRevealed = true;
+          easterEgg.innerHTML = '<div class="easter-egg-revealed">~500ms behind your neurons.<br>You\'re just catching up.</div><div class="easter-egg-citation">(Libet, 1983)</div>';
+          easterEgg.style.textDecoration = 'none';
+          easterEgg.style.cursor = 'default';
+        }
+      });
+    }
 
     /* ── Boot ── */
     setTimeout(() => document.getElementById('loading').classList.add('hidden'), 1900);
