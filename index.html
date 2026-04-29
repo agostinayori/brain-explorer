@@ -893,7 +893,7 @@
       <div class="appendix-section">
         <h2 class="appendix-section-header">Hormones</h2>
         <ul class="appendix-terms">
-          <li class="appendix-term gray">Testosterone</li>
+          <li class="appendix-term black" data-term="testosterone">Testosterone</li>
           <li class="appendix-term gray">Oxytocin</li>
           <li class="appendix-term gray">Vasopressin</li>
           <li class="appendix-term gray">Cortisol/Glucocorticoids</li>
@@ -2076,6 +2076,31 @@
       card.addEventListener('click', () => {
         const title = card.querySelector('.ts-card-title').textContent;
         openTsModal(title);
+      });
+    });
+
+    const appendixModalData = {
+      'testosterone': `
+        <p>Testosterone is the hormone most people think they understand — and most people don't. The popular narrative is straightforward: testosterone causes aggression. More testosterone, more aggression. It's intuitive, it's tidy, and it's mostly wrong.</p>
+        <p>The correlative data is real enough. In nearly all species, males have more circulating testosterone than females. Male aggression is most prevalent when testosterone levels are highest — during adolescence, during mating season, during dominance competitions. The link exists. The problem is that correlation is not causation, and the leap from "these things are associated" to "one causes the other" turns out to be much harder to establish than it sounds.</p>
+        <p>Demonstrating that testosterone causes aggression requires what Sapolsky calls a subtraction-plus-replacement experiment: remove testosterone (via castration) and see if aggression drops, then reintroduce it and see if aggression returns. The results are messier than the simple story would predict. Castration does reduce aggression — but not to zero. Some male aggression is entirely testosterone-independent. And the more experience an individual had being aggressive before castration, the more aggression continues afterward. The behavior, in other words, has partially decoupled from the hormone that initially promoted it.</p>
+        <h3>What testosterone actually does</h3>
+        <p>Rather than causing aggression directly, testosterone does something more subtle and more interesting: it amplifies preexisting tendencies. It doesn't create aggression out of thin air — it exacerbates whatever inclinations are already there, given the right trigger. In contexts where status is gained through dominance, testosterone correlates with aggression. In contexts where status is gained through generosity or skill, it can amplify those behaviors instead.</p>
+        <p>What it reliably does, across contexts, is push behavior in a few consistent directions. Testosterone makes people overconfident and overly optimistic — useful in some situations, costly in others. It increases impulsivity and risk-taking, nudging people toward the easier, faster, lower-accuracy response rather than the slower, more deliberative one. It makes people more sensitive to dominance cues and less influenced by the frontal cortex's "let's stop and think about this" function. It makes people cocky, egocentric, and more focused on self-interest — which is either a feature or a bug depending on the situation.</p>
+        <h3>The timing matters</h3>
+        <p>Testosterone doesn't just sit at a stable level and exert a constant influence. It responds dynamically to social context. Levels rise when a dominance hierarchy first forms or undergoes reorganization. They rise during competition — both individual and team sports — and, fascinatingly, they rise in fans watching their team win. That last finding is telling: the testosterone spike is less about physical activity than about the psychology of dominance, identification, and status. You don't have to do anything — just feel like your side won.</p>
+        <p>Rising testosterone levels increase aggression specifically at the time of a challenge to status. It's not a background hum of aggression; it's a response to a perceived threat to one's position. And crucially, aggression itself stimulates testosterone secretion — which makes disentangling cause and effect in humans genuinely difficult. The chicken-and-egg problem is real, and studies that find weak or inconsistent associations between testosterone levels and aggression in human adults are partly a reflection of that complexity.</p>
+      `
+    };
+
+    document.querySelectorAll('.appendix-term.black').forEach(term => {
+      term.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const termId = term.getAttribute('data-term');
+        tsModalTitle.textContent = term.textContent;
+        const content = appendixModalData[termId.toLowerCase()] || '<p>Content coming soon</p>';
+        tsModalContent.innerHTML = content;
+        tsModalOverlay.classList.add('active');
       });
     });
 
