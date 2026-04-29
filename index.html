@@ -1692,6 +1692,26 @@
       }
     });
 
+    window.addEventListener('touchend', e => {
+      if (panel.contains(e.target)) return;
+      if (e.changedTouches.length > 0) {
+        const touch = e.changedTouches[0];
+        const rect = renderer.domElement.getBoundingClientRect();
+        mx = touch.clientX; my = touch.clientY;
+        mouse.x =  ((touch.clientX - rect.left) / rect.width)  * 2 - 1;
+        mouse.y = -((touch.clientY - rect.top)  / rect.height) * 2 + 1;
+      }
+      if (hoveredId) {
+        selectRegion(hoveredId);
+        if (!hintDismissed) {
+          hint.classList.add('hidden');
+          hintDismissed = true;
+        }
+      } else if (selectedId && !panel.contains(e.target)) {
+        closePanel();
+      }
+    });
+
     function selectRegion(id) {
       selectedId = id;
       const r = REGION_MAP[id];
