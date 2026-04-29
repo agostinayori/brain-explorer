@@ -1529,7 +1529,7 @@
     });
 
     function renderPanel(r) {
-      const connList = r.connections.map(id => REGION_MAP[id]).filter(Boolean);
+      const connList = REGIONS.filter(reg => reg.id !== r.id);
 
       // ── section renderer (handles all content types) ──
       function renderSection(s, delay) {
