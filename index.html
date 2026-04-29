@@ -2162,15 +2162,15 @@
       });
     });
 
-    document.querySelectorAll('.modal-appendix-link').forEach(link => {
-      link.addEventListener('click', (e) => {
+    tsModalContent.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-appendix-link')) {
         console.log("link clicked");
         e.preventDefault();
         e.stopPropagation();
         console.log("switching to appendix");
         closeTsModal();
         switchView('appendix');
-      });
+      }
     });
 
     const easterEgg = document.getElementById('free-will-easter-egg');
