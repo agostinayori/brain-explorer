@@ -295,6 +295,42 @@
         font-size: 10px;
         bottom: 12px;
       }
+      .side-panel {
+        position: fixed; bottom: 0; right: 0; top: auto; left: 0;
+        width: 100%; height: 75vh;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -4px 40px rgba(26,26,46,.14);
+        transform: translateY(100%);
+        transition: transform .38s cubic-bezier(.4,0,.2,1);
+        z-index: 50;
+      }
+      .side-panel.open {
+        transform: translateY(0);
+      }
+      .resize-handle {
+        display: none;
+      }
+      .bottom-sheet-handle {
+        width: 36px; height: 4px;
+        background: #d0d0d8;
+        border-radius: 2px;
+        margin: 12px auto 16px;
+      }
+      .panel-inner {
+        border-radius: 0;
+      }
+      .bottom-sheet-overlay {
+        position: fixed; inset: 0; top: 0;
+        background: rgba(26,26,46,.32);
+        opacity: 0;
+        transition: opacity .38s ease;
+        pointer-events: none;
+        z-index: 40;
+      }
+      .bottom-sheet-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
     }
 
     /* ── Temporal modal ─────────────────────────────────────────────── */
@@ -796,7 +832,12 @@
   <div id="tooltip"></div>
 
   <!-- Side panel -->
+  <!-- Bottom sheet overlay (mobile only) -->
+  <div class="bottom-sheet-overlay" id="bottom-sheet-overlay"></div>
+
   <aside class="side-panel" id="panel">
+    <!-- Bottom sheet handle bar (mobile only) -->
+    <div class="bottom-sheet-handle"></div>
     <!-- Drag-to-resize strip on the left edge -->
     <div class="resize-handle" id="resize-handle" title="Drag to resize"></div>
     <button class="close-btn" id="close-btn" aria-label="Close">
@@ -1595,18 +1636,26 @@
     function openPanel(r) {
       renderPanel(r);
       panel.classList.add('open');
-      updateCanvasOffset();
+      if (window.innerWidth <= 768) {
+        document.getElementById('bottom-sheet-overlay').classList.add('active');
+      } else {
+        updateCanvasOffset();
+      }
     }
 
     function closePanel() {
       panel.classList.remove('open');
-      updateCanvasOffset();
+      document.getElementById('bottom-sheet-overlay').classList.remove('active');
+      if (window.innerWidth > 768) {
+        updateCanvasOffset();
+      }
       clearConnections();
       resetAllHighlights();
       selectedId = null;
     }
 
     closeBtn.addEventListener('click', closePanel);
+    document.getElementById('bottom-sheet-overlay').addEventListener('click', closePanel);
 
     /* ═══════════════════════════════════════════════════════════════════
        INTERACTION STATE
