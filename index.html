@@ -1638,6 +1638,7 @@
       panel.classList.add('open');
       if (window.innerWidth <= 768) {
         document.getElementById('bottom-sheet-overlay').classList.add('active');
+        labelRenderer.domElement.style.zIndex = '20';
       } else {
         updateCanvasOffset();
       }
@@ -1646,6 +1647,7 @@
     function closePanel() {
       panel.classList.remove('open');
       document.getElementById('bottom-sheet-overlay').classList.remove('active');
+      labelRenderer.domElement.style.zIndex = '';
       if (window.innerWidth > 768) {
         updateCanvasOffset();
       }
