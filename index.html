@@ -525,6 +525,16 @@
       font-style: italic;
     }
 
+    .modal-appendix-link {
+      color: var(--text-1);
+      text-decoration: underline;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .modal-appendix-link:hover {
+      opacity: 0.7;
+    }
+
     /* ── Tooltip ──────────────────────────────────────────────────────── */
     #tooltip {
       position: fixed;
@@ -2087,7 +2097,8 @@
         <h3>Oxytocin and vasopressin: the dark side of the "love hormone"</h3>
         <p>Oxytocin has an even worse reputation problem — in the opposite direction. It's been marketed to the public as the "love hormone," the neurochemical of bonding, trust, and human connection. Hug someone and oxytocin flows. It's warm, it's fuzzy, and it's also deeply incomplete.</p>
         <p>Here's the caveat Sapolsky is emphatic about: oxytocin increases trust, generosity, and affiliation — but only toward the in-group. Toward people perceived as "us." Toward people who are outside that circle, oxytocin can actually increase suspicion, bias, and hostility. The love hormone, it turns out, is also the tribalism hormone. Turns out the neurochemical of human connection comes with fine print.</p>
-        <p>Vasopressin, its close relative, works similarly — strongly involved in pair bonding, parental behavior, and territory defense. Both hormones are deeply context-dependent, and both illustrate Sapolsky's running argument: there are no simple hormonal on/off switches for complex social behaviors. <em>(For more on oxytocin and vasopressin, see the Appendix.)</em></p>
+        <p>Vasopressin, its close relative, works similarly — strongly involved in pair bonding, parental behavior, and territory defense. Both hormones are deeply context-dependent, and both illustrate Sapolsky's running argument: there are no simple hormonal on/off switches for complex social behaviors.</p>
+        <p><em>(For more on oxytocin and vasopressin, see the <a href="#" class="modal-appendix-link">Appendix</a>.)</em></p>
         <h3>Female aggression and the hormone story</h3>
         <p>The chapter also addresses female aggression — a topic that gets less airtime than testosterone-fueled male aggression but is no less real or interesting. Estrogen and progesterone play roles in modulating aggression and irritability across the hormonal cycle, though the relationships are more complex and context-dependent than popular accounts suggest. Maternal aggression — the ferocity with which females of most mammalian species defend their offspring — is one of the most reliable and intense forms of aggression in nature, and it's heavily hormonally mediated.</p>
         <p>The broader point is that the gendered narrative around hormones and aggression (testosterone = male aggression, end of story) is a massive oversimplification. Female hormonal systems are just as capable of producing aggressive behavior — under the right conditions and with the right triggers.</p>
@@ -2145,6 +2156,33 @@
         const content = appendixModalData[termId.toLowerCase()] || '<p>Content coming soon</p>';
         tsModalContent.innerHTML = content;
         tsModalOverlay.classList.add('active');
+      });
+    });
+
+    function navigateToAppendix() {
+      const appendixBtn = document.querySelector('[data-view="appendix"]');
+      const appendixPlaceholder = document.getElementById('appendix-placeholder');
+      const temporalPlaceholder = document.getElementById('temporal-placeholder');
+
+      closeTsModal();
+
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      appendixBtn.classList.add('active');
+
+      appEl.style.display = 'none';
+      hintEl2.style.display = 'none';
+      temporalPlaceholder.classList.remove('active');
+      appendixPlaceholder.classList.add('active');
+      if (window.innerWidth <= 768) {
+        easterEgg.style.display = 'none';
+      }
+    }
+
+    document.querySelectorAll('.modal-appendix-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigateToAppendix();
       });
     });
 
