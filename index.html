@@ -1637,6 +1637,7 @@
     }
 
     function openPanel(r) {
+      document.getElementById('panel-body').scrollTop = 0;
       renderPanel(r);
       panel.classList.add('open');
       if (window.innerWidth <= 768) {
