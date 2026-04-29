@@ -2164,8 +2164,10 @@
 
     document.querySelectorAll('.modal-appendix-link').forEach(link => {
       link.addEventListener('click', (e) => {
+        console.log("link clicked");
         e.preventDefault();
         e.stopPropagation();
+        console.log("switching to appendix");
         closeTsModal();
         switchView('appendix');
       });
