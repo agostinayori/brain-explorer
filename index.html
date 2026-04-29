@@ -1175,7 +1175,8 @@
     scene.fog = new THREE.FogExp2(0xf8f7f4, 0.055);
 
     const camera = new THREE.PerspectiveCamera(43, innerWidth / innerHeight, 0.1, 100);
-    camera.position.set(2.9, 1.9, 5.6);
+    const cameraZ = innerWidth <= 768 ? 7.5 : 5.6;
+    camera.position.set(2.9, 1.9, cameraZ);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -1769,10 +1770,14 @@
         appEl.style.display   = 'none';
         hintEl2.style.display = 'none';
         temporalPlaceholder.classList.add('active');
+        if (window.innerWidth <= 768) {
+          easterEgg.style.display = 'none';
+        }
       } else {
         appEl.style.display   = '';
         hintEl2.style.display = '';
         temporalPlaceholder.classList.remove('active');
+        easterEgg.style.display = '';
       }
     });
 
