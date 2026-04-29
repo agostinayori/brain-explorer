@@ -2005,15 +2005,12 @@
     const appEl   = document.getElementById('app');
     const hintEl2 = document.getElementById('hint');
 
-    document.getElementById('nav-tabs').addEventListener('click', e => {
-      const btn = e.target.closest('.nav-tab');
-      if (!btn) return;
-      const view = btn.dataset.view;
+    function switchView(view) {
+      const btn = document.querySelector(`[data-view="${view}"]`);
+      const appendixPlaceholder = document.getElementById('appendix-placeholder');
 
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
-
-      const appendixPlaceholder = document.getElementById('appendix-placeholder');
 
       if (view === 'temporal') {
         closePanel();
@@ -2040,6 +2037,12 @@
         appendixPlaceholder.classList.remove('active');
         easterEgg.style.display = '';
       }
+    }
+
+    document.getElementById('nav-tabs').addEventListener('click', e => {
+      const btn = e.target.closest('.nav-tab');
+      if (!btn) return;
+      switchView(btn.dataset.view);
     });
 
     /* ── Temporal modal ── */
@@ -2159,30 +2162,12 @@
       });
     });
 
-    function navigateToAppendix() {
-      const appendixBtn = document.querySelector('[data-view="appendix"]');
-      const appendixPlaceholder = document.getElementById('appendix-placeholder');
-      const temporalPlaceholder = document.getElementById('temporal-placeholder');
-
-      closeTsModal();
-
-      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-      appendixBtn.classList.add('active');
-
-      appEl.style.display = 'none';
-      hintEl2.style.display = 'none';
-      temporalPlaceholder.classList.remove('active');
-      appendixPlaceholder.classList.add('active');
-      if (window.innerWidth <= 768) {
-        easterEgg.style.display = 'none';
-      }
-    }
-
     document.querySelectorAll('.modal-appendix-link').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        navigateToAppendix();
+        closeTsModal();
+        switchView('appendix');
       });
     });
 
