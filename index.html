@@ -1905,10 +1905,9 @@
         tooltip.style.left = mx + 'px';
         tooltip.style.top  = my + 'px';
         tooltip.style.opacity = '1';
-        document.body.style.cursor = 'pointer';
       } else {
         tooltip.style.opacity = '0';
-        document.body.style.cursor = isTouchDevice ? 'default' : document.body.style.cursor;
+        document.body.style.cursor = 'default';
       }
 
       /* ── Breathing / pulse on active region ── */
